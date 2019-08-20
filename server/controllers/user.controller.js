@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const passport = require('passport');
 const _ = require('lodash');
+const { sendConfirmation } = require('../utils/emailer');
 
 const User = mongoose.model('User');
 
@@ -10,9 +11,10 @@ module.exports.register = (req, res, next) => {
     user.email = req.body.email;
     user.password = req.body.password;
     user.save((err, doc) => {
-        if (!err)
+        if (!err){
+            sendConfirmation(user.email)
             res.send(doc);
-        else {
+        } else {
             if (err.code == 11000)
                 res.status(422).send(['Duplicate email adrress found.']);
             else
@@ -44,3 +46,13 @@ module.exports.userProfile = (req, res, next) =>{
         }
     );
 }
+
+module.exports.confirmate = async (req, res) => {
+  try {
+    await User.updateOne({ email: req.params.token }, { confirmed: true });
+  } catch (e) {
+    res.send("error");
+  }
+
+  return res.redirect("http://localhost:4200/login");
+};
